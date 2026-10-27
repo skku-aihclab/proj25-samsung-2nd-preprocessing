@@ -1,0 +1,9 @@
+# 데이터는 올리지 않음 (폴더 구조만 유지)
+data/**
+!data/*/
+!data/*/.gitkeep
+
+__pycache__/
+*.pyc
+.DS_Store
+.ipynb_checkpoints/
