@@ -93,7 +93,7 @@ preprocessing_2nd/
 파이프라인 입력은 아래 **4가지**이며, 모두 NAS `Public/2025_samsung/2nd/`에 있습니다. 정해진 위치에 두면 나머지(전극 선택, 병합, 라벨, 다운샘플)는 스크립트가 순서대로 만듭니다.
 
 | | 원본 | → 둘 위치 |
-|---|---|---|---|
+|---|---|
 | ① | 디바이스 CSV: NAS `Public/2025_samsung/2nd/emg_data/*.csv` (3,938개) | `data/emg_data/` | 
 | ② | 영상 라벨: NAS `Public/2025_samsung/2nd/data_label_fixed_no_sensor_error_files/*.csv` (676개) | `data/labels/` | 
 | ③ | beep 시각: NAS `Public/2025_samsung/2nd/beep/*.csv` (685개) | `data/beep/` | 
