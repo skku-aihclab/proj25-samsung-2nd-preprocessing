@@ -90,14 +90,14 @@ preprocessing_2nd/
 
 ## 2. 원본 데이터 준비
 
-파이프라인 입력은 아래 **4가지**이며, 모두 NAS `Public/2025_samsung/2nd/`에 있습니다 (연구실 서버에서는 `/home/user1/nas/Public/2025_samsung/2nd/`). 정해진 위치에 두면 나머지(전극 선택, 병합, 라벨, 다운샘플)는 스크립트가 순서대로 만듭니다.
+파이프라인 입력은 아래 **4가지**이며, 모두 NAS `Public/2025_samsung/2nd/`에 있습니다. 정해진 위치에 두면 나머지(전극 선택, 병합, 라벨, 다운샘플)는 스크립트가 순서대로 만듭니다.
 
-| | 원본 | → 둘 위치 | 비고 |
+| | 원본 | → 둘 위치 |
 |---|---|---|---|
-| ① | 디바이스 CSV: NAS `Public/2025_samsung/2nd/emg_data/*.csv` (3,938개) | `data/emg_data/` | 그대로 복사 |
-| ② | 영상 라벨: NAS `Public/2025_samsung/2nd/data_label_fixed_no_sensor_error_files/*.csv` (676개) | `data/labels/` | 그대로 복사. `data_label/`, `data_label_fixed/`는 복사하지 않음 |
-| ③ | beep 시각: NAS `Public/2025_samsung/2nd/beep/*.csv` (685개) | `data/beep/` | 그대로 복사 |
-| ④ | 메타: NAS `Public/2025_samsung/2nd/video_csv_info.xlsx` (996행) | `data/meta/` | 엑셀을 수정했다면 이 파일을 교체 |
+| ① | 디바이스 CSV: NAS `Public/2025_samsung/2nd/emg_data/*.csv` (3,938개) | `data/emg_data/` | 
+| ② | 영상 라벨: NAS `Public/2025_samsung/2nd/data_label_fixed_no_sensor_error_files/*.csv` (676개) | `data/labels/` | 
+| ③ | beep 시각: NAS `Public/2025_samsung/2nd/beep/*.csv` (685개) | `data/beep/` | 
+| ④ | 메타: NAS `Public/2025_samsung/2nd/video_csv_info.xlsx` (996행) | `data/meta/` | 
 
 NAS `Public/2025_samsung/2nd/` 아래의 날짜별 폴더(`250909/` 등)와 `merged_dataset*.csv`는 필요 없습니다.
 
@@ -170,7 +170,6 @@ NAS 라벨 폴더는 3개이며 **`data_label_fixed_no_sensor_error_files/`만 �
 |---|---|
 | 파일명 | 엑셀 `beep_filename`과 같아야 함 |
 | 컬럼 | `Rep Number, Timestamp` (`YYYY-MM-DD HH:MM:SS.mmm`) |
-| 예외 | `5_unbal_r_ohp_30_6.csv`는 시각이 분 단위(`2025.9.12 10:44`)로만 저장되어 있어 읽지 못함 → 이 측정은 `beep` 전부 0. 폴더 안의 `beep`(확장자 없는 빈 파일)은 무시됨 |
 
 ### ④ 메타데이터 → `data/meta/video_csv_info.xlsx`
 
@@ -181,7 +180,7 @@ NAS 라벨 폴더는 3개이며 **`data_label_fixed_no_sensor_error_files/`만 �
 | `video_name` | 영상 파일명 (`YYYYMMDD_HHMMSS.mp4`). 앞 8자리가 **측정 날짜**로 쓰이고, 라벨 파일 매칭 키 |
 | `csv_filename_r`, `csv_filename_l` | 오른쪽·왼쪽 원본 CSV 파일명 (매칭 키. 한쪽만 있어도 됨) |
 | `normal_data` | `o` / `v`인 행만 처리 (대소문자 무관). 그 외(`x` 등)는 제외 |
-| `r_0`–`r_3`, `l_0`–`l_3` | 전극별 유효 표시. `o` / `v` = 사용 가능, 그 외 = 사용 불가 (step3 전극 선택 기준) |
+| `r_0`–`r_3`, `l_0`–`l_3` | 전극별 유효 표시. 실험 도중 관리자의 판단하에 노이즈 시각화 후 결정.  `o` / `v` = 사용 가능, 그 외 = 사용 불가 (step3 전극 선택 기준) |
 | `subject_id, exercise, bal/unbal` | 피험자, 운동, 균형(`bal`)/불균형(`unbal`). 출력 메타이자 step3 전극 묶음 기준 |
 | `beep_filename` | beep CSV 파일명 (없으면 beep 0) |
 | `unbal_normalside` | 불균형 측정에서 **정상 쪽 팔** (`l` / `r`). 균형 측정에서는 비어 있음 |
@@ -282,18 +281,8 @@ NAS 라벨(`data_label_fixed_no_sensor_error_files/`)을 만든 보정 과정입
 python src/step1_fix_label_time.py
 ```
 
-**재현 결과 (NAS 라벨과 비교)**
-
-| 항목 | 결과 |
-|---|---|
-| 파일 목록 | 671개 생성. NAS 676개와 비교해 NAS에만 있는 5개(`20250909_143113`, `20250916_141536`, `141704`, `142015`, `142111`)는 `data_label/`에 없어 나중에 직접 추가된 라벨 |
-| `Abs_Time` | 590개(88%)가 NAS와 0.1초 이내로 일치 |
-| 불일치 81개 | 대부분 9/19 측정(약 1.6초 차이). 보정 엑셀에 기록되지 않은 추가 보정이 있었던 것으로 보임 |
-
-→ 노트북으로 하던 보정을 그대로 옮겼지만 NAS 라벨을 완전히 재현하지는 못하므로, 파이프라인 입력은 NAS 라벨(`data_label_fixed_no_sensor_error_files/`)을 그대로 씁니다.
 
 ### STEP 2. 입력 점검: `step2_check_inputs.py`
-엑셀, 원본 CSV, 라벨, beep을 파이프라인과 **같은 매칭 규칙**으로 대조해, 처리 중에 조용히 빠질 파일을 미리 보여줍니다. 아무 파일도 고치지 않습니다.
 출력: `interim/input_check.csv` (`issue, video_name, name, detail`)
 
 | issue | 의미 | 조치 |
@@ -380,7 +369,7 @@ TimeStamp, right_ax..right_gz, left_ax..left_gz, video_name, subject_id, exercis
 ## 6. 배경: 시간축과 라벨 보정
 
 ### 연구 목적
-운동 수행 중 기록된 **EMG/IMU 신호**와 **비디오 기반 수동 라벨링(Start / Peak / End)** 을 같은 절대시간축에 올려, 샘플 단위 라벨이 붙은 학습 데이터를 만든다.
+운동 수행 중 기록된 **EMG/IMU 신호**와 **비디오 기반 수동 라벨링(Start / Peak / End)** 을 같은 절대시간축에 올려, 샘플 단위 라벨이 붙은 학습 데이터를 만듭니다. 
 
 ### 문제 정의
 
@@ -394,39 +383,24 @@ TimeStamp, right_ax..right_gz, left_ax..left_gz, video_name, subject_id, exercis
 ### 해결 로직
 
 **① 센서 시간축** (STEP4)
-첫 행의 `Save_Time`만 녹화 시작 시각으로 쓰고, 각 샘플 시각은 정확히 0.0005초 간격인 `Index_Time`을 더해 만든다.
+첫 행의 `Save_Time`만 녹화 시작 시각으로 쓰고, 각 샘플 시각은 정확히 0.0005초 간격인 `Index_Time`을 더해 만듭니다. 
 
 ```
 TimeStamp = (video_name 앞 8자리 날짜) + (첫 행 Save_Time) + Index_Time
 ```
 
 **② 영상 시간 오류 보정** (STEP1)
-영상을 재생해 **첫 번째 beep이 들리는 순간**의 영상 표시 시각(`first_beep`)을 읽고, beep 기록 파일의 **첫 beep 실제 절대시각**과의 차이 Δt를 라벨 `Abs_Time`에서 뺀다.
-예: `20250916_095045.mp4`는 첫 beep 기록 시각이 09:50:54.545인데 영상에서는 약 09:50:56에 들림 → 이 차이만큼 `Abs_Time`을 앞당김. 영상 시각은 눈으로 읽은 값이라 수십 ms 오차가 있다.
+영상을 재생해 **첫 번째 beep이 들리는 순간**의 영상 표시 시각(`first_beep`)을 읽고, beep 기록 파일의 **첫 beep 실제 절대시각**과의 차이 Δt를 라벨 `Abs_Time`에서 뺍니다. 
+예: `20250916_095045.mp4`는 첫 beep 기록 시각이 09:50:54.545인데 영상에서는 약 09:50:56에 들림 → 이 차이만큼 `Abs_Time`을 앞당김. 영상 시각은 눈으로 읽은 값이라 수십 ms 오차가 있습니다. 
 
 **③ 시각화 검수 및 제외** (STEP1)
-보정 후에도 라벨과 EMG가 맞지 않는 측정은 측정별 RMS 그림(2절 참고)을 하나씩 보고 수동으로 제외했다 (35건, `VISUAL_EXCLUDED_FILE_NO`). 센서 시간 오류 측정(25건)은 보정할 기준이 없어 처음부터 라벨에서 뺐다.
+보정 후에도 라벨과 EMG가 맞지 않는 측정은 측정별 RMS 그림(2절 참고)을 하나씩 보고 수동으로 제외했습니다 (35건, `VISUAL_EXCLUDED_FILE_NO`). 센서 시간 오류 측정(25건)은 보정할 기준이 없어 처음부터 라벨에서 뺐습니다. 
 
 **④ 라벨을 샘플에 표시** (STEP4)
-보정된 `Abs_Time`에 상대시간을 더해 rep별 절대시각을 구하고, 가장 가까운 센서 샘플에 라벨을 찍는다.
+보정된 `Abs_Time`에 상대시간을 더해 rep별 절대시각을 구하고, 가장 가까운 센서 샘플에 라벨을 찍습니다.
 
 ```
 Abs_Start = Abs_Time + Start,   Abs_Peak = Abs_Time + Peak,   Abs_End = Abs_Time + End
 ```
 
 `merged_dataset.csv`의 `beep` 컬럼은 각 동작 신호의 시각이자 보정 기준점이므로 라벨 위치를 검토할 때 함께 볼 수 있다. 정상 기록이라면 각 rep이 beep 직후에 시작한다.
-
----
-
-## 7. 주의사항
-
-1. **EMG는 ADC 원시값 그대로입니다.** 전압 변환, 기준선(약 1,858) 제거, 필터링, 정규화를 하지 않으므로 모델 입력 전에 처리해야 합니다.
-2. **66 Hz 파일에는 `label`, `beep`이 없습니다.** 필요하면 `merged_dataset.csv`의 `label`/`beep` 위치의 `TimeStamp`를 66 Hz `TimeStamp`에 가장 가까운 행으로 다시 매칭하세요.
-3. **같은 샘플에 라벨이 겹치면 나중 것만 남습니다** (Start → Peak → End 순으로 기록). step4가 `[경고]`로 알려줍니다.
-4. **좌우 병합은 오른쪽 시간축 기준입니다.** 왼쪽 녹화가 오른쪽보다 길면 오른쪽 범위 밖 구간은 버려지고, 짧으면 가장 가까운 값이 반복해서 붙습니다.
-5. **전극이 비는 경우가 있습니다.** step3는 묶음 고정 전극이 무효인 측정에서 다른 전극으로 바꾸지 않으므로 해당 근육 컬럼이 NaN이 됩니다. `channel_selection.csv`에서 `None`인 행을 확인하세요.
-6. **검증 범위:** 실제 2차 데이터로 step1–3을 확인했습니다.
-   - step1: 위 재현 결과 표
-   - step2: 처리 대상 711건, 센서 파일 누락 0건
-   - step3: 1,422개 파일 중 `EMG_0`이 빈 파일 5개, `EMG_2`가 빈 파일 19개
-   - step4–5는 실제 데이터 전체로는 아직 돌리지 않았습니다. 첫 실행 후 `[경고]` 출력을 확인하세요.
